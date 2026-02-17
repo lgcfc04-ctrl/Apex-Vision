@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Apex Vision Pro</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="logo.png">
+    
+    <style>
+        :root { 
+            --bg: #000; 
+            --btn-num: #151515; 
+            --btn-op: #252525; 
+            --btn-spec: #a5a5a5; 
+        }
+
+        body { 
+            background-color: var(--bg); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            height: 100vh; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            color: white; 
+            overflow: hidden;
+        }
+
+        .app { 
+            width: 100%; 
+            max-width: 450px; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 20px; 
+            box-sizing: border-box; 
+        }
+
+        .header { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            margin-top: 10px;
+            opacity: 0.6; 
+            font-size: 0.7rem; 
+            letter-spacing: 2px; 
+            text-transform: uppercase; 
+        }
+
+        .display { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-end; 
+            text-align: right; 
+            padding: 40px 0; 
+        }
+
+        #hist { color: #555; font-size: 1.2rem; min-height: 1.5rem; margin-bottom: 5px; }
+        #res { font-size: 4.5rem; font-weight: 200; overflow-x: hidden; white-space: nowrap; }
+
+        /* Barra de funções extras (LOG, 2º Grau) */
+        .adv-bar { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 10px; 
+            margin-bottom: 20px; 
+        }
+
+        .btn-adv { 
+            height: 45px; 
+            border-radius: 12px; 
+            background: #0a0a0a; 
+            border: 1px solid #222; 
+            color: var(--btn-spec); 
+            font-size: 0.8rem; 
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Grade de botões principais */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 12px; 
+            margin-bottom: 30px; /* Sobe os botões para não colarem no fundo */
+        }
+
+        button { 
+            aspect-ratio: 1/1; 
+            border: none; 
+            border-radius: 50%; 
+            font-size: 1.6rem; 
+            color: white; 
+            cursor: pointer; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: brightness 0.1s;
+        }
+
+        button:active { filter: brightness(1.8); }
+
+        .n { background: var(--btn-num); } 
+        .o { background: var(--btn-op); font-size: 2rem; } 
+        .s { background: var(--btn-spec); color: black; font-weight: bold; }
+
+        .zero { 
+            grid-column: span 2; 
+            aspect-ratio: auto; 
+            border-radius: 50px; 
+            justify-content: flex-start; 
+            padding-left: 35px; 
+        }
+
+        /* Modal do Solver de Bhaskara */
+        #solver { 
+            display: none; 
+            position: absolute; 
+            background: rgba(0,0,0,0.98); 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 100; 
+        }
+
+        #solver h3 { margin-bottom: 20px; font-weight: 300; }
+
+        input { 
+            background: #111; 
+            border: 1px solid #333; 
+            color: white; 
+            padding: 15px; 
+            margin: 8px; 
+            width: 70%; 
+            border-radius: 10px; 
+            text-align: center; 
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="header">
+        <img src="logo.png" alt="logo" style="width:20px; height:20px;">
+        <span>Apex Vision Pro</span>
+    </div>
+
+    <div class="display">
+        <div id="hist"></div>
+        <div id="res">0</div>
+    </div>
+
+    <div class="adv-bar">
+        <button class="btn-adv" onclick="calcLog()">LOG</button>
+        <button class="btn-adv" onclick="openSolver()">2º GRAU</button>
+        <button class="btn-adv" onclick="back()">APAGAR</button>
+    </div>
+
+    <div class="grid">
+        <button class="s" onclick="clr()">AC</button>
+        <button class="s" onclick="sign()">+/-</button>
+        <button class="s" onclick="perc()">%</button>
+        <button class="o" onclick="add('/')">÷</button>
+
+        <button class="n" onclick="add('7')">7</button>
+        <button class="n" onclick="add('8')">8</button>
+        <button class="n" onclick="add('9')">9</button>
+        <button class="o" onclick="add('*')">×</button>
+
+        <button class="n" onclick="add('4')">4</button>
+        <button class="n" onclick="add('5')">5</button>
+        <button class="n" onclick="add('6')">6</button>
+        <button class="o" onclick="add('-')">−</button>
+
+        <button class="n" onclick="add('1')">1</button>
+        <button class="n" onclick="add('2')">2</button>
+        <button class="n" onclick="add('3')">3</button>
+        <button class="o" onclick="add('+')">+</button>
+
+        <button class="n zero" onclick="add('0')">0</button>
+        <button class="n" onclick="add('.')">.</button>
+        <button class="o" onclick="solve()">=</button>
+    </div>
+</div>
+
+<div id="solver">
+    <h3>ax² + bx + c = 0</h3>
+    <input type="number" id="valA" placeholder="Valor de A">
+    <input type="number" id="valB" placeholder="Valor de B">
+    <input type="number" id="valC" placeholder="Valor de C">
+    <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button class="s" style="width:120px; height:50px; border-radius:10px;" onclick="calcBhaskara()">Resolver</button>
+        <button class="o" style="width:120px; height:50px; border-radius:10px; font-size: 1rem;" onclick="closeSolver()">Fechar</button>
+    </div>
+</div>
+
+<script>
+    let cur = '0';
+    let h = '';
+
+    const resDiv = document.getElementById('res');
+    const histDiv = document.getElementById('hist');
+
+    function upd() { 
+        resDiv.innerText = cur; 
+        histDiv.innerText = h;
+        // Ajuste de fonte para números grandes
+        if(cur.length > 7) resDiv.style.fontSize = "2.5rem";
+        else resDiv.style.fontSize = "4.5rem";
+    }
+
+    function add(v) { 
+        if(cur === '0' && v !== '.') cur = v; 
+        else cur += v; 
+        upd(); 
+    }
+
+    function clr() { cur = '0'; h = ''; upd(); }
+    
+    function back() { 
+        cur = cur.slice(0, -1) || '0'; 
+        upd(); 
+    }
+
+    function sign() { cur = (parseFloat(cur) * -1).toString(); upd(); }
+
+    function perc() { 
+        h = cur + '%';
+        cur = (parseFloat(cur) / 100).toString(); 
+        upd(); 
+    }
+
+    function calcLog() { 
+        h = 'log10(' + cur + ')';
+        cur = Math.log10(parseFloat(cur)).toFixed(4).toString(); 
+        upd(); 
+    }
+
+    function solve() { 
+        try { 
+            h = cur + ' =';
+            cur = eval(cur.replace(/×/g, '*').replace(/÷/g, '/')).toString(); 
+            upd(); 
+        } catch { cur = 'Erro'; upd(); } 
+    }
+
+    function openSolver() { document.getElementById('solver').style.display = 'flex'; }
+    function closeSolver() { document.getElementById('solver').style.display = 'none'; }
+
+    function calcBhaskara() {
+        const a = parseFloat(document.getElementById('valA').value);
+        const b = parseFloat(document.getElementById('valB').value);
+        const c = parseFloat(document.getElementById('valC').value);
+        const d = (b * b) - (4 * a * c);
+        
+        if(d < 0) {
+            cur = "Sem raiz real";
+            h = "Δ = " + d;
+        } else { 
+            const x1 = (-b + Math.sqrt(d)) / (2 * a);
+            const x2 = (-b - Math.sqrt(d)) / (2 * a);
+            cur = `x1:${x1.toFixed(2)} x2:${x2.toFixed(2)}`;
+            h = "Δ = " + d;
+        }
+        closeSolver(); 
+        upd(); 
+    }
+</script>
+</body>
+  </html>
+  
