@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Apex Vision OS</title>
+    
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #1c1c1e;
+            --accent: #ff6b00;
+            --text: #ffffff;
+            --text-dim: #8e8e93;
+            --btn-active: #3a3a3c;
+        }
+
+        .theme-roxo { --accent: #9d4edd; }
+        .theme-verde { --accent: #2dce89; }
+        .theme-azul { --accent: #007aff; }
+        .theme-rosa { --accent: #ff2d55; }
+        .theme-vermelho { --accent: #ff3b30; }
+        .theme-cinza { --accent: #8e8e93; }
+        .theme-allblack { --surface: #0f0f0f; --accent: #ffffff; }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            touch-action: manipulation;
+            outline: none;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, system-ui, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background 0.4s ease;
+        }
+
+        .app-shell {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: env(safe-area-inset-top) 15px 15px 15px;
+        }
+
+        .mode-nav {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            padding: 10px 0;
+        }
+        .mode-item {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+        .mode-item.active { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 4px; }
+
+        .display-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            text-align: right;
+            padding: 20px 5px;
+        }
+        #history-log { font-size: 0.9rem; color: var(--text-dim); max-height: 60px; overflow-y: auto; margin-bottom: 8px; }
+        #main-val { font-size: 4rem; font-weight: 200; line-height: 1; }
+
+        .view { display: none; height: 100%; flex-direction: column; }
+        .view.active { display: flex; }
+
+        .keyboard { display: flex; flex-direction: column; gap: 8px; }
+        .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px 10px;
+        }
+        .mod-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .mod-icon {
+            width: 50px; height: 50px;
+            background: var(--surface);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--accent);
+            border: 1px solid #333;
+        }
+
+        button {
+            border: none; background: var(--surface); color: var(--text);
+            aspect-ratio: 1.1; border-radius: 12px; font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.9); background: var(--btn-active); }
+        .sci { color: var(--text-dim); font-size: 0.9rem; }
+        .op { color: var(--accent); font-size: 1.5rem; }
+        .num { background: transparent; font-size: 1.6rem; }
+        .eq { background: var(--accent); color: #fff; border-radius: 50%; aspect-ratio: 1; font-size: 1.8rem; }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    <div class="mode-nav">
+        <div class="mode-item active" onclick="switchMode('calc')">Calculadora</div>
+        <div class="mode-item" onclick="switchMode('mods')">Módulos</div>
+    </div>
+
+    <div id="view-calc" class="view active">
+        <div class="display-area">
+            <div id="history-log"></div>
+            <div id="main-val">0</div>
+        </div>
+
+        <div class="keyboard">
+            <div class="row">
+                <button class="sci" onclick="engine.sci('2nd')">2nd</button>
+                <button class="sci" onclick="engine.sci('deg')">deg</button>
+                <button class="sci" onclick="engine.sci('sin')">sin</button>
+                <button class="sci" onclick="engine.sci('cos')">cos</button>
+                <button class="sci" onclick="engine.sci('tan')">tan</button>
+            </div>
+            <div class="row">
+                <button class="sci" onclick="engine.add('**')">xʸ</button>
+                <button class="sci" onclick="engine.sci('lg')">lg</button>
+                <button class="sci" onclick="engine.sci('ln')">ln</button>
+                <button class="sci" onclick="engine.add('(')">(</button>
+                <button class="sci" onclick="engine.add(')')">)</button>
+            </div>
+            <div class="row">
+                <button class="sci" onclick="engine.sci('sqrt')">√x</button>
+                <button class="sci" style="color:#ff3b30" onclick="engine.clear()">AC</button>
+                <button class="sci" onclick="engine.backspace()">DEL</button>
+                <button class="sci" onclick="engine.perc()">%</button>
+                <button class="op" onclick="engine.add('/')">÷</button>
+            </div>
+            <div class="row">
+                <button class="sci" onclick="engine.sci('fact')">x!</button>
+                <button class="num" onclick="engine.add('7')">7</button>
+                <button class="num" onclick="engine.add('8')">8</button>
+                <button class="num" onclick="engine.add('9')">9</button>
+                <button class="op" onclick="engine.add('*')">×</button>
+            </div>
+            <div class="row">
+                <button class="sci" onclick="engine.sci('inv')">1/x</button>
+                <button class="num" onclick="engine.add('4')">4</button>
+                <button class="num" onclick="engine.add('5')">5</button>
+                <button class="num" onclick="engine.add('6')">6</button>
+                <button class="op" onclick="engine.add('-')">−</button>
+            </div>
+            <div class="row">
+                <button class="sci" onclick="engine.sci('pi')">π</button>
+                <button class="num" onclick="engine.add('1')">1</button>
+                <button class="num" onclick="engine.add('2')">2</button>
+                <button class="num" onclick="engine.add('3')">3</button>
+                <button class="op" onclick="engine.add('+')">+</button>
+            </div>
+            <div class="row">
+                <button class="sci" onclick="engine.sci('e')">e</button>
+                <button class="num" onclick="engine.toggleSign()">+/-</button>
+                <button class="num" onclick="engine.add('0')">0</button>
+                <button class="num" onclick="engine.add('.')">,</button>
+                <button class="eq" onclick="engine.solve()">=</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-mods" class="view">
+        <div class="modules-grid">
+            <div class="mod-card"><div class="mod-icon">AGE</div>Idade</div>
+            <div class="mod-card"><div class="mod-icon">AREA</div>Área</div>
+            <div class="mod-card"><div class="mod-icon">BMI</div>IMC</div>
+            <div class="mod-card"><div class="mod-icon">DATA</div>Dados</div>
+            <div class="mod-card"><div class="mod-icon">DATE</div>Data</div>
+            <div class="mod-card"><div class="mod-icon">DESC</div>Desconto</div>
+            <div class="mod-card"><div class="mod-icon">LEN</div>Comprimento</div>
+            <div class="mod-card"><div class="mod-icon">MASS</div>Massa</div>
+            <div class="mod-card"><div class="mod-icon">HEX</div>Sist. Numérico</div>
+            <div class="mod-card"><div class="mod-icon">VEL</div>Velocidade</div>
+            <div class="mod-card"><div class="mod-icon">TEMP</div>Temperatura</div>
+            <div class="mod-card"><div class="mod-icon">TIME</div>Tempo</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const engine = {
+        cur: '0', history: [], isRes: false,
+        tap() { if(navigator.vibrate) navigator.vibrate(12); },
+        update() {
+            const m = document.getElementById('main-val');
+            m.innerText = this.cur;
+            m.style.fontSize = this.cur.length > 8 ? (this.cur.length > 12 ? "1.8rem" : "2.8rem") : "4rem";
+            document.getElementById('history-log').innerHTML = this.history.map(h => `<div>${h}</div>`).join('');
+        },
+        add(v) {
+            this.tap();
+            if(this.cur === '0' || this.isRes) { this.cur = v; this.isRes = false; }
+            else { this.cur += v; }
+            this.update();
+        },
+        clear() { this.tap(); this.cur = '0'; this.update(); },
+        backspace() { this.tap(); this.cur = this.cur.length > 1 ? this.cur.slice(0, -1) : '0'; this.update(); },
+        perc() { this.tap(); this.cur = (eval(this.cur)/100).toString(); this.update(); },
+        toggleSign() { this.tap(); this.cur = (parseFloat(this.cur)*-1).toString(); this.update(); },
+        sci(type) {
+            this.tap();
+            let n = parseFloat(this.cur);
+            switch(type) {
+                case 'sin': this.cur = Math.sin(n).toFixed(6); break;
+                case 'cos': this.cur = Math.cos(n).toFixed(6); break;
+                case 'tan': this.cur = Math.tan(n).toFixed(6); break;
+                case 'sqrt': this.cur = Math.sqrt(n).toFixed(6); break;
+                case 'lg': this.cur = Math.log10(n).toFixed(6); break;
+                case 'ln': this.cur = Math.log(n).toFixed(6); break;
+                case 'pi': this.cur = Math.PI.toFixed(6); break;
+                case 'e': this.cur = Math.E.toFixed(6); break;
+                case 'inv': this.cur = (1/n).toFixed(6); break;
+                case 'fact': 
+                    let f=1; for(let i=1;i<=n;i++) f*=i;
+                    this.cur = f.toString(); break;
+            }
+            this.update();
+        },
+        solve() {
+            this.tap();
+            try {
+                let raw = this.cur.replace(/×/g, '*').replace(/÷/g, '/');
+                let res = eval(raw);
+                let finalRes = Number.isInteger(res) ? res : res.toFixed(4);
+                this.history.push(`${this.cur} = ${finalRes}`);
+                if(this.history.length > 5) this.history.shift();
+                this.cur = finalRes.toString();
+                this.isRes = true;
+                this.update();
+            } catch { this.cur = "Erro"; this.isRes = true; this.update(); }
+        }
+    };
+
+    function switchMode(m) {
+        document.querySelectorAll('.mode-item').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        if(m === 'calc') {
+            document.querySelector('.mode-item:nth-child(1)').classList.add('active');
+            document.getElementById('view-calc').classList.add('active');
+        } else {
+            document.querySelector('.mode-item:nth-child(2)').classList.add('active');
+            document.getElementById('view-mods').classList.add('active');
+        }
+        engine.tap();
+    }
+</script>
+</body>
+                  </html>
+                  
