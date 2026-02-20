@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Apex Vision Pro</title>
+
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #1c1c1e;
+            --accent: #ff6b00;
+            --text: #ffffff;
+            --text-dim: #8e8e93;
+            --btn-active: #3a3a3c;
+        }
+
+        /* Definições de Temas */
+        .theme-roxo { --accent: #9d4edd; }
+        .theme-verde { --accent: #2dce89; }
+        .theme-azul { --accent: #007aff; }
+        .theme-rosa { --accent: #ff2d55; }
+        .theme-vermelho { --accent: #ff3b30; }
+        .theme-cinza { --accent: #8e8e93; }
+        .theme-allblack { --surface: #0a0a0a; --accent: #ffffff; }
+        .theme-white { 
+            --bg: #ffffff; --surface: #f2f2f7; --text: #000000; 
+            --text-dim: #636366; --accent: #007aff; --btn-active: #d1d1d6;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* Remove o azul */
+            user-select: none; /* Impede seleção de texto */
+            outline: none;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, system-ui, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background 0.3s ease;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: env(safe-area-inset-top) 20px 30px 20px; /* Margem extra em baixo */
+        }
+
+        /* Seletor de Temas */
+        .theme-bar {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 15px 0;
+            min-height: 60px;
+        }
+        .dot {
+            min-width: 28px; height: 28px; border-radius: 50%;
+            border: 2px solid var(--surface); cursor: pointer;
+        }
+
+        /* Display */
+        .display {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            text-align: right;
+            padding-bottom: 20px;
+        }
+        #hist { color: var(--text-dim); font-size: 1.2rem; min-height: 1.5rem; }
+        #res { font-size: 4.5rem; font-weight: 200; line-height: 1; overflow: hidden; }
+
+        /* Keypad */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            border: none;
+            background: var(--surface);
+            color: var(--text);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.9);
+            background: var(--btn-active);
+        }
+
+        .spec { background: #a5a5a5; color: #000; }
+        .op { color: var(--accent); font-size: 2.2rem; }
+        .equal { background: var(--accent); color: #fff; }
+        .zero { grid-column: span 2; aspect-ratio: auto; border-radius: 50px; padding-left: 25px; justify-content: flex-start; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="theme-bar">
+        <div class="dot" style="background:#ff6b00" onclick="setTheme('')"></div>
+        <div class="dot" style="background:#9d4edd" onclick="setTheme('theme-roxo')"></div>
+        <div class="dot" style="background:#2dce89" onclick="setTheme('theme-verde')"></div>
+        <div class="dot" style="background:#007aff" onclick="setTheme('theme-azul')"></div>
+        <div class="dot" style="background:#ff2d55" onclick="setTheme('theme-rosa')"></div>
+        <div class="dot" style="background:#ff3b30" onclick="setTheme('theme-vermelho')"></div>
+        <div class="dot" style="background:#8e8e93" onclick="setTheme('theme-cinza')"></div>
+        <div class="dot" style="background:#111111" onclick="setTheme('theme-allblack')"></div>
+        <div class="dot" style="background:#ffffff" onclick="setTheme('theme-white')"></div>
+    </div>
+
+    <div class="display">
+        <div id="hist"></div>
+        <div id="res">0</div>
+    </div>
+
+    <div class="grid">
+        <button class="spec" onclick="calc.clear()">AC</button>
+        <button class="spec" onclick="calc.del()">DEL</button>
+        <button class="spec" onclick="calc.perc()">%</button>
+        <button class="op" onclick="calc.add('/')">÷</button>
+
+        <button onclick="calc.add('7')">7</button>
+        <button onclick="calc.add('8')">8</button>
+        <button onclick="calc.add('9')">9</button>
+        <button class="op" onclick="calc.add('*')">×</button>
+
+        <button onclick="calc.add('4')">4</button>
+        <button onclick="calc.add('5')">5</button>
+        <button onclick="calc.add('6')">6</button>
+        <button class="op" onclick="calc.add('-')">−</button>
+
+        <button onclick="calc.add('1')">1</button>
+        <button onclick="calc.add('2')">2</button>
+        <button onclick="calc.add('3')">3</button>
+        <button class="op" onclick="calc.add('+')">+</button>
+
+        <button class="zero" onclick="calc.add('0')">0</button>
+        <button onclick="calc.add('.')">.</button>
+        <button class="equal" onclick="calc.solve()">=</button>
+    </div>
+</div>
+
+<script>
+    const calc = {
+        cur: '0', h: '', isNew: false,
+        update() {
+            const r = document.getElementById('res');
+            r.innerText = this.cur;
+            document.getElementById('hist').innerText = this.h;
+            r.style.fontSize = this.cur.length > 7 ? (this.cur.length > 11 ? "2.2rem" : "3rem") : "4.5rem";
+        },
+        add(v) {
+            if(this.cur === '0' || this.isNew) { this.cur = v; this.isNew = false; }
+            else { this.cur += v; }
+            this.update();
+        },
+        clear() { this.cur = '0'; this.h = ''; this.update(); },
+        del() { this.cur = this.cur.length > 1 ? this.cur.slice(0, -1) : '0'; this.update(); },
+        perc() { this.cur = (parseFloat(this.cur)/100).toString(); this.update(); },
+        solve() {
+            try {
+                this.h = this.cur + ' =';
+                this.cur = eval(this.cur.replace(/×/g, '*').replace(/÷/g, '/')).toString();
+                this.isNew = true;
+                this.update();
+            } catch { this.cur = 'Erro'; this.update(); }
+        }
+    };
+
+    function setTheme(t) { document.body.className = t; }
+</script>
+</body>
+</html>
